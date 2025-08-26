@@ -51,7 +51,7 @@
     "APP_NAME": "API Soluções Urbanas",
     "APP_ENV": "production",
     "APP_KEY": "base64:bn83cOvkDpUYBiXpEm2wNWHGFPfL6OtrJp1GurNGsOk=",
-    "APP_DEBUG": "false",
+    "APP_DEBUG": "true",
     "APP_URL": "https://api-solucoes-urbanas.vercel.app",
     "APP_CONFIG_CACHE": "/tmp/config.php",
     "APP_EVENTS_CACHE": "/tmp/events.php",
@@ -60,11 +60,13 @@
     "APP_SERVICES_CACHE": "/tmp/services.php",
     "VIEW_COMPILED_PATH": "/tmp",
     "LOG_CHANNEL": "stderr",
-    "LOG_LEVEL": "error",
+    "LOG_LEVEL": "debug",
     "CACHE_STORE": "array",
     "SESSION_DRIVER": "cookie",
     "TRUSTED_PROXIES": "*",
-    "DB_CONNECTION": "pgsql",
-    "QUEUE_CONNECTION": "sync"
+    "DB_CONNECTION": "sqlite",
+    "QUEUE_CONNECTION": "sync",
+    "APP_LOCALE": "en",
+    "APP_FALLBACK_LOCALE": "en"
   }
 }
