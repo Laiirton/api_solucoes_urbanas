@@ -53,15 +53,21 @@ class AuthController extends Controller
         $data = $request->all();
 
         $validator = Validator::make($data, [
-            'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
+            'email'    => ['required_without:username', 'email'],
+            'username' => ['required_without:email', 'string'],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $user = User::where('email', $data['email'])->first();
+        // Determina se vai buscar pelo email ou pelo username
+        if (!empty($data['email'])) {
+            $user = User::where('email', $data['email'])->first();
+        } else {
+            $user = User::where('username', $data['username'])->first();
+        }
         if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
@@ -69,7 +75,6 @@ class AuthController extends Controller
         $token = $this->issueToken($user);
 
         return response()->json([
-            'user'  => $user,
             'token' => $token,
         ]);
     }
