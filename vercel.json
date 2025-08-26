@@ -1,97 +1,27 @@
 {
-  "version": 2,
-  "buildCommand": "echo skip build",
-  "outputDirectory": "public",
-  "functions": {
-    "api/debug.php": {
-      "runtime": "vercel-php@0.7.4"
+    "version": 2,
+      "framework": null,
+    "functions": {
+        "api/index.php": { "runtime": "vercel-php@0.6.0" }
     },
-    "api/diagnose.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/test.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/login.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/register.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/laravel.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/index.php": {
-      "runtime": "vercel-php@0.7.4"
+    "routes": [{
+        "src": "/(.*)",
+        "dest": "/api/index.php"
+    }],
+    "env": {
+        "APP_ENV": "production",
+        "APP_DEBUG": "true",
+        "APP_URL": "https://yourproductionurl.com",
+
+        "APP_CONFIG_CACHE": "/tmp/config.php",
+        "APP_EVENTS_CACHE": "/tmp/events.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
+        "APP_ROUTES_CACHE": "/tmp/routes.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php",
+        "VIEW_COMPILED_PATH": "/tmp",
+
+        "CACHE_DRIVER": "array",
+        "LOG_CHANNEL": "stderr",
+        "SESSION_DRIVER": "cookie"
     }
-  },
-  "routes": [
-    {
-      "src": "/api/debug",
-      "dest": "/api/debug.php"
-    },
-    {
-      "src": "/api/diagnose",
-      "dest": "/api/diagnose.php"
-    },
-    {
-      "src": "/api/test",
-      "dest": "/api/test.php"
-    },
-    {
-      "src": "/api/auth/login",
-      "dest": "/api/login.php"
-    },
-    {
-      "src": "/api/auth/register",
-      "dest": "/api/register.php"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/laravel.php"
-    },
-    {
-      "src": "/build/(.*)",
-      "dest": "/build/$1"
-    },
-    {
-      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json))",
-      "dest": "/public/$1"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/public/robots.txt"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/public/favicon.ico"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.php"
-    }
-  ],
-  "env": {
-    "APP_NAME": "API Soluções Urbanas",
-    "APP_ENV": "production",
-    "APP_KEY": "base64:bn83cOvkDpUYBiXpEm2wNWHGFPfL6OtrJp1GurNGsOk=",
-    "APP_DEBUG": "true",
-    "APP_URL": "https://api-solucoes-urbanas.vercel.app",
-    "APP_CONFIG_CACHE": "/tmp/config.php",
-    "APP_EVENTS_CACHE": "/tmp/events.php",
-    "APP_PACKAGES_CACHE": "/tmp/packages.php",
-    "APP_ROUTES_CACHE": "/tmp/routes.php",
-    "APP_SERVICES_CACHE": "/tmp/services.php",
-    "VIEW_COMPILED_PATH": "/tmp",
-    "LOG_CHANNEL": "stderr",
-    "LOG_LEVEL": "debug",
-    "CACHE_STORE": "array",
-    "SESSION_DRIVER": "cookie",
-    "TRUSTED_PROXIES": "*",
-    "DB_CONNECTION": "sqlite",
-    "QUEUE_CONNECTION": "sync",
-    "APP_LOCALE": "en",
-    "APP_FALLBACK_LOCALE": "en",
-    "SUPABASE_JWT_SECRET": "sgnGUb0AaDWw+3o3uMOra3nP0ju0GqvUj1LVjSlZA/sLzusKAFehL5qTRbOUmbZ6CFhBaXGQ/2ZUzSGRXdnkCA=="
-  }
 }
