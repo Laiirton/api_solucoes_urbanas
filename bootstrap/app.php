@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.jwt' => App\Http\Middleware\JwtMiddleware::class,
         ]);
+
+        $middleware->use([
+            Illuminate\Http\Middleware\HandleCors::class,
+            App\Http\Middleware\TrustProxies::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
