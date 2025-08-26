@@ -33,7 +33,7 @@ class AuthController extends Controller
         $user = User::create([
             'username'   => $data['username'],
             'email'      => $data['email'],
-            'password'   => $data['password'], // auto-hashed by model casts
+            'password'   => $data['password'],
             'full_name'  => $data['full_name'] ?? null,
             'cpf'        => $data['cpf'] ?? null,
             'birth_date' => $data['birth_date'] ?? null,
