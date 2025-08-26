@@ -46,7 +46,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'birth_date' => 'date',
+            'birth_date' => 'date:Y-m-d',
         ];
     }
 
