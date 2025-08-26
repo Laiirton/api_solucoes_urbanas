@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "framework": "vite",
+  "framework": "laravel",
   "buildCommand": "echo skip build",
   "outputDirectory": "public",
   "functions": {
@@ -9,8 +9,22 @@
     }
   },
   "routes": [
-    { "src": "/build/(.*)", "dest": "/build/$1" },
-    { "src": "/(.*)", "dest": "/api/index.php" }
+    {
+      "src": "/build/(.*)",
+      "dest": "/build/$1"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.php"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
   ],
   "env": {
     "APP_ENV": "production",
@@ -26,6 +40,8 @@
     "SESSION_DRIVER": "cookie",
     "TRUSTED_PROXIES": "*",
     "DB_CONNECTION": "pgsql",
-    "QUEUE_CONNECTION": "sync"
+    "QUEUE_CONNECTION": "sync",
+    "SUPABASE_JWT_SECRET": "sgnGUb0AaDWw+3o3uMOra3nP0ju0GqvUj1LVjSlZA/sLzusKAFehL5qTRbOUmbZ6CFhBaXGQ/2ZUzSGRXdnkCA==",
+    "APP_URL": "@vercel-url"
   }
 }
