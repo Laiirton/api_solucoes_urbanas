@@ -6,6 +6,9 @@
     "api/debug.php": {
       "runtime": "vercel-php@0.7.4"
     },
+    "api/diagnose.php": {
+      "runtime": "vercel-php@0.7.4"
+    },
     "api/test.php": {
       "runtime": "vercel-php@0.7.4"
     },
@@ -26,6 +29,10 @@
     {
       "src": "/api/debug",
       "dest": "/api/debug.php"
+    },
+    {
+      "src": "/api/diagnose",
+      "dest": "/api/diagnose.php"
     },
     {
       "src": "/api/test",
@@ -84,6 +91,7 @@
     "DB_CONNECTION": "sqlite",
     "QUEUE_CONNECTION": "sync",
     "APP_LOCALE": "en",
-    "APP_FALLBACK_LOCALE": "en"
+    "APP_FALLBACK_LOCALE": "en",
+    "SUPABASE_JWT_SECRET": "sgnGUb0AaDWw+3o3uMOra3nP0ju0GqvUj1LVjSlZA/sLzusKAFehL5qTRbOUmbZ6CFhBaXGQ/2ZUzSGRXdnkCA=="
   }
 }
