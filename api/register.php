@@ -1,7 +1,9 @@
 <?php
-// Laravel Test endpoint
+// Laravel Auth Register endpoint
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -11,14 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 define('LARAVEL_START', microtime(true));
 chdir(dirname(__DIR__));
 
+require dirname(__DIR__) . '/vendor/autoload.php';
+
 try {
-    require dirname(__DIR__) . '/vendor/autoload.php';
-    
     $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
     
-    $_SERVER['REQUEST_URI'] = '/api/test';
-    $_SERVER['PATH_INFO'] = '/test';
-    $_SERVER['REQUEST_METHOD'] = 'GET';
+    $_SERVER['REQUEST_URI'] = '/api/auth/register';
+    $_SERVER['PATH_INFO'] = '/auth/register';
     
     $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
     $request = \Illuminate\Http\Request::capture();
@@ -29,10 +30,6 @@ try {
     
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
-        'error' => 'Laravel bootstrap failed',
-        'message' => $e->getMessage(),
-        'file' => $e->getFile(),
-        'line' => $e->getLine()
-    ]);
+    echo json_encode(['error' => $e->getMessage()]);
 }
+?>
