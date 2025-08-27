@@ -3,16 +3,13 @@
   "buildCommand": "echo skip build",
   "outputDirectory": "public",
   "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.4"
+    },
     "api/debug.php": {
       "runtime": "vercel-php@0.7.4"
     },
-    "api/test.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
     "api/laravel.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/index.php": {
       "runtime": "vercel-php@0.7.4"
     }
   },
@@ -23,7 +20,7 @@
     },
     {
       "src": "/api/test",
-      "dest": "/api/test.php"
+      "dest": "/api/laravel.php"
     },
     {
       "src": "/api/(.*)",
