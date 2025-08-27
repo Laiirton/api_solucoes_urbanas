@@ -9,12 +9,6 @@
     "api/test.php": {
       "runtime": "vercel-php@0.7.4"
     },
-    "api/login.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
-    "api/register.php": {
-      "runtime": "vercel-php@0.7.4"
-    },
     "api/laravel.php": {
       "runtime": "vercel-php@0.7.4"
     },
@@ -30,14 +24,6 @@
     {
       "src": "/api/test",
       "dest": "/api/test.php"
-    },
-    {
-      "src": "/api/auth/login",
-      "dest": "/api/login.php"
-    },
-    {
-      "src": "/api/auth/register",
-      "dest": "/api/register.php"
     },
     {
       "src": "/api/(.*)",
