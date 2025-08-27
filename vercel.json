@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "framework": "vite",
+  "framework": "null",
   "outputDirectory": "public",
   "functions": {
     "api/index.php": {
