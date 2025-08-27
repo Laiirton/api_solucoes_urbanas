@@ -1,4 +1,4 @@
-<!--
+<?php
 // Vercel serverless entry point for Laravel API
 
 use Illuminate\Foundation\Application;
@@ -26,8 +26,4 @@ $request = Request::capture();
 $response = $kernel->handle($request);
 $response->send();
 
-$kernel->terminate($request, $response); -->
-
-<?php
-
-require __DIR__ . "/../public/index.php";
+$kernel->terminate($request, $response);
