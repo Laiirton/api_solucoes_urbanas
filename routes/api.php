@@ -14,5 +14,6 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth.jwt')->group(function () {
+    Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
 });
-Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
+
