@@ -1,29 +1,37 @@
 <?php
 // Vercel serverless entry point for Laravel API
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
-
 define('LARAVEL_START', microtime(true));
 
-// Set working directory to Laravel root
-chdir(__DIR__ . '/..');
+// Define the path constants
+$public_path = realpath(__DIR__ . '/../public');
+$app_path = realpath(__DIR__ . '/../');
+
+// Change to the app directory
+chdir($app_path);
 
 // Determine if the application is in maintenance mode...
-if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
+if (file_exists($maintenance = $app_path . '/storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
 // Register the Composer autoloader...
-require __DIR__ . '/../vendor/autoload.php';
+require $app_path . '/vendor/autoload.php';
+
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
 // Bootstrap Laravel and handle the request...
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+/** @var Application $app */
+$app = require_once $app_path . '/bootstrap/app.php';
 
-// Handle the request through Laravel
-$kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+// Capture the request
 $request = Request::capture();
-$response = $kernel->handle($request);
-$response->send();
 
-$kernel->terminate($request, $response);
+// Handle the request
+$response = $app->handleRequest($request);
+
+// Send the response
+if ($response) {
+    $response->send();
+}
