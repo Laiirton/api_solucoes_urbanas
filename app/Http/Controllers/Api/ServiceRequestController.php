@@ -109,36 +109,4 @@ class ServiceRequestController extends Controller
         return response()->json(['message' => 'Service request deleted successfully']);
     }
 
-    public function updateStatus(Request $request, $id)
-    {
-        $serviceRequest = ServiceRequest::find($id);
-
-        if (!$serviceRequest) {
-            return response()->json(['message' => 'Service request not found'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'status' => ['required', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $serviceRequest->update(['status' => $request->status]);
-
-        return response()->json($serviceRequest);
-    }
-
-    public function getByUser($userId)
-    {
-        $serviceRequests = ServiceRequest::where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($serviceRequests);
-    }
 }

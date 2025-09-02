@@ -22,7 +22,5 @@ Route::middleware('auth.jwt')->group(function () {
     Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
     
     Route::apiResource('service-requests', ServiceRequestController::class);
-    Route::patch('service-requests/{id}/status', [ServiceRequestController::class, 'updateStatus']);
-    Route::get('users/{userId}/service-requests', [ServiceRequestController::class, 'getByUser']);
 });
 
