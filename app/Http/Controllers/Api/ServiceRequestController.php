@@ -12,7 +12,7 @@ class ServiceRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ServiceRequest::with('user');
+        $query = ServiceRequest::query();
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -26,7 +26,7 @@ class ServiceRequestController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $serviceRequests = $query->orderBy('created_at', 'desc')->paginate(15);
+        $serviceRequests = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json($serviceRequests);
     }
@@ -52,14 +52,13 @@ class ServiceRequestController extends Controller
         $data['user_id'] = $request->user()->id;
 
         $serviceRequest = ServiceRequest::create($data);
-        $serviceRequest->load('user');
 
         return response()->json($serviceRequest, 201);
     }
 
     public function show($id)
     {
-        $serviceRequest = ServiceRequest::with('user')->find($id);
+        $serviceRequest = ServiceRequest::find($id);
 
         if (!$serviceRequest) {
             return response()->json(['message' => 'Service request not found'], 404);
@@ -93,7 +92,6 @@ class ServiceRequestController extends Controller
         }
 
         $serviceRequest->update($request->all());
-        $serviceRequest->load('user');
 
         return response()->json($serviceRequest);
     }
@@ -131,17 +129,15 @@ class ServiceRequestController extends Controller
         }
 
         $serviceRequest->update(['status' => $request->status]);
-        $serviceRequest->load('user');
 
         return response()->json($serviceRequest);
     }
 
     public function getByUser($userId)
     {
-        $serviceRequests = ServiceRequest::with('user')
-            ->where('user_id', $userId)
+        $serviceRequests = ServiceRequest::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->get();
 
         return response()->json($serviceRequests);
     }
