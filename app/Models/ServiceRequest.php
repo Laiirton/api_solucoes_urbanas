@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ServiceRequest extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     protected $table = 'service_requests';
 
@@ -19,19 +18,16 @@ class ServiceRequest extends Model
         'category',
         'request_data',
         'status',
-        'attachment_urls',
     ];
 
     protected $casts = [
-        'request_data' => 'array',
-        'attachment_urls' => 'array',
+        'request_data' => 'json',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
     protected $attributes = [
         'status' => 'pending',
-        'attachment_urls' => '{}',
     ];
 
     public function user()

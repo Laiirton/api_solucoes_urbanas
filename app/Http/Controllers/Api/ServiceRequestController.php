@@ -39,8 +39,6 @@ class ServiceRequestController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'request_data' => ['required', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'attachment_urls' => ['nullable', 'array'],
-            'attachment_urls.*' => ['url'],
         ]);
 
         if ($validator->fails()) {
@@ -79,14 +77,12 @@ class ServiceRequestController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'user_id' => ['sometimes', 'nullable', 'uuid', 'exists:users,id'],
+            'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
             'service_id' => ['sometimes', 'integer'],
             'service_title' => ['sometimes', 'string', 'max:255'],
             'category' => ['sometimes', 'string', 'max:100'],
             'request_data' => ['sometimes', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'attachment_urls' => ['sometimes', 'nullable', 'array'],
-            'attachment_urls.*' => ['url'],
         ]);
 
         if ($validator->fails()) {
