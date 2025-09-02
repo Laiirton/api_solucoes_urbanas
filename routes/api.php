@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\ApiDocumentationController;
 
 // API Documentation - Lista todos os endpoints disponíveis
@@ -19,5 +20,9 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth.jwt')->group(function () {
     Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
+    
+    Route::apiResource('service-requests', ServiceRequestController::class)->parameters(['service-requests' => 'id']);
+    Route::patch('service-requests/{id}/status', [ServiceRequestController::class, 'updateStatus']);
+    Route::get('users/{userId}/service-requests', [ServiceRequestController::class, 'getByUser']);
 });
 
