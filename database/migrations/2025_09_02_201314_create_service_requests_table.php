@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('service_title');
             $table->text('category');
             $table->jsonb('request_data');
+            $table->jsonb('attachments')->nullable();
             $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
             $table->timestampTz('created_at')->useCurrent();
             $table->timestampTz('updated_at')->useCurrent()->useCurrentOnUpdate();
