@@ -33,10 +33,10 @@ class UserController extends Controller
             'username'   => ['required', 'string', 'max:255'],
             'email'      => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'   => ['required', 'string', 'min:6'],
-            'full_name'  => ['nullable', 'string', 'max:255'],
-            'cpf'        => ['nullable', 'string', 'max:50'],
-            'birth_date' => ['nullable', 'date'],
-            'type'       => ['nullable', 'string', 'max:50'],
+            'full_name'  => ['required', 'string', 'max:255'],
+            'cpf'        => ['required', 'string', 'max:50'],
+            'birth_date' => ['required', 'date'],
+            'type'       => ['required', 'string', 'max:50'],
         ]);
 
         if ($validator->fails()) {
