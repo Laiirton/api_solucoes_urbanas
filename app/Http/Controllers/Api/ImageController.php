@@ -5,37 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
-use Illuminate\Support\Str;
-use App\Models\Upload;
+use App\Services\UploadService;
 
 class ImageController extends Controller
 {
-    private $s3Client;
+    private $uploadService;
     
-    public function __construct()
+    public function __construct(UploadService $uploadService)
     {
-        $httpOptions = [
-            'verify' => env('AWS_SSL_VERIFY', true),
-        ];
-
-        // Para desenvolvimento local, pode ser necessário desabilitar SSL verify
-        if (env('APP_ENV') === 'local' && !env('AWS_SSL_VERIFY', true)) {
-            $httpOptions['verify'] = false;
-        }
-
-        $this->s3Client = new S3Client([
-            'version' => 'latest',
-            'region' => config('services.supabase.region'),
-            'endpoint' => config('services.supabase.endpoint'),
-            'credentials' => [
-                'key' => config('services.supabase.access_key_id'),
-                'secret' => config('services.supabase.secret_access_key'),
-            ],
-            'use_path_style_endpoint' => true,
-            'http' => $httpOptions,
-        ]);
+        $this->uploadService = $uploadService;
     }
 
     public function upload(Request $request): JsonResponse
@@ -48,45 +27,20 @@ class ImageController extends Controller
         try {
             $image = $request->file('image');
             $folder = $request->input('folder', 'images');
-            
-            $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
-            
-            $key = $folder . '/' . $filename;
-            
-            $result = $this->s3Client->putObject([
-                'Bucket' => config('services.supabase.bucket'),
-                'Key' => $key,
-                'Body' => fopen($image->getPathname(), 'r'),
-                'ContentType' => $image->getMimeType(),
-            ]);
-
-            $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
-            
             $userId = auth()->id();
-            if (!$userId && method_exists(auth(), 'guard')) {
-                try { $guardUser = auth()->guard('jwt')->user(); if ($guardUser) { $userId = $guardUser->id; } } catch (\Throwable $t) {}
-            }
+            if (!$userId && method_exists(auth(), 'guard')) { try { $g = auth()->guard('jwt')->user(); if ($g) { $userId = $g->id; } } catch (\Throwable $t) {} }
             if (!$userId && $request->user()) { $userId = $request->user()->id; }
-            $upload = Upload::create([
-                'user_id' => $userId,
-                'stored_name' => $filename,
-                'folder' => $folder,
-                'path' => $key,
-                'url' => $publicUrl,
-                'size' => $image->getSize(),
-                'mime_type' => $image->getMimeType()
-            ]);
-
+            $result = $this->uploadService->upload($image, $folder, $userId);
             return response()->json([
                 'success' => true,
                 'message' => 'Imagem enviada com sucesso',
                 'data' => [
-                    'id' => $upload->id,
-                    'filename' => $filename,
-                    'path' => $key,
-                    'url' => $publicUrl,
-                    'size' => $image->getSize(),
-                    'mime_type' => $image->getMimeType()
+                    'id' => $result['model']->id,
+                    'filename' => $result['filename'],
+                    'path' => $result['path'],
+                    'url' => $result['url'],
+                    'size' => $result['size'],
+                    'mime_type' => $result['mime_type']
                 ]
             ], 201);
 
@@ -110,10 +64,7 @@ class ImageController extends Controller
         ]);
 
         try {
-            $this->s3Client->deleteObject([
-                'Bucket' => config('services.supabase.bucket'),
-                'Key' => $request->input('path')
-            ]);
+            $this->uploadService->delete($request->input('path'));
 
             return response()->json([
                 'success' => true,
@@ -133,25 +84,7 @@ class ImageController extends Controller
         $folder = $request->input('folder', 'images');
 
         try {
-            $result = $this->s3Client->listObjects([
-                'Bucket' => config('services.supabase.bucket'),
-                'Prefix' => $folder . '/'
-            ]);
-
-            $images = [];
-            if (isset($result['Contents'])) {
-                foreach ($result['Contents'] as $object) {
-                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $object['Key'];
-                    
-                    $images[] = [
-                        'key' => $object['Key'],
-                        'size' => $object['Size'],
-                        'last_modified' => $object['LastModified']->format('Y-m-d H:i:s'),
-                        'url' => $publicUrl
-                    ];
-                }
-            }
-
+            $images = $this->uploadService->list($folder);
             return response()->json([
                 'success' => true,
                 'data' => $images
