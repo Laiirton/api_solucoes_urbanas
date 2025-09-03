@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\ImageController;
+use App\Http\Controllers\Api\VideoController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -24,6 +25,12 @@ Route::middleware('auth.jwt')->group(function () {
         Route::post('/upload', [ImageController::class, 'upload']);
         Route::delete('/delete', [ImageController::class, 'delete']);
         Route::get('/list', [ImageController::class, 'list']);
+    });
+
+    Route::prefix('videos')->group(function () {
+        Route::post('/upload', [VideoController::class, 'upload']);
+        Route::delete('/delete', [VideoController::class, 'delete']);
+        Route::get('/list', [VideoController::class, 'list']);
     });
 });
 
