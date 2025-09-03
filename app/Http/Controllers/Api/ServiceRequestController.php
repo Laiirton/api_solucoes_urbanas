@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
 use App\Models\Upload;
+use App\Services\UploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -14,27 +15,11 @@ use Illuminate\Support\Str;
 
 class ServiceRequestController extends Controller
 {
-    private $s3Client;
+    private $uploadService;
 
-    public function __construct()
+    public function __construct(UploadService $uploadService)
     {
-        $httpOptions = [
-            'verify' => env('AWS_SSL_VERIFY', true),
-        ];
-        if (env('APP_ENV') === 'local' && !env('AWS_SSL_VERIFY', true)) {
-            $httpOptions['verify'] = false;
-        }
-        $this->s3Client = new S3Client([
-            'version' => 'latest',
-            'region' => config('services.supabase.region'),
-            'endpoint' => config('services.supabase.endpoint'),
-            'credentials' => [
-                'key' => config('services.supabase.access_key_id'),
-                'secret' => config('services.supabase.secret_access_key'),
-            ],
-            'use_path_style_endpoint' => true,
-            'http' => $httpOptions,
-        ]);
+        $this->uploadService = $uploadService;
     }
     public function index(Request $request)
     {
@@ -78,37 +63,14 @@ class ServiceRequestController extends Controller
 
         $data = $request->except('attachments');
         $data['user_id'] = $request->user()->id;
-        $attachmentsUrls = [];
         if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                if (!$file->isValid()) { continue; }
-                try {
-                    $folder = 'service_requests';
-                    $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $key = $folder . '/' . $filename;
-                    $this->s3Client->putObject([
-                        'Bucket' => config('services.supabase.bucket'),
-                        'Key' => $key,
-                        'Body' => fopen($file->getPathname(), 'r'),
-                        'ContentType' => $file->getMimeType(),
-                    ]);
-                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
-                    $upload = Upload::create([
-                        'user_id' => $data['user_id'],
-                        'stored_name' => $filename,
-                        'folder' => $folder,
-                        'path' => $key,
-                        'url' => $publicUrl,
-                        'size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType()
-                    ]);
-                    $attachmentsUrls[] = $publicUrl;
-                } catch (AwsException $e) {
-                    return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
-                }
+            try {
+                $results = $this->uploadService->uploadMany($request->file('attachments'), 'service_requests', $data['user_id']);
+                $data['attachments'] = array_map(fn($r) => $r['url'], $results);
+            } catch (AwsException $e) {
+                return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
             }
         }
-        if (!empty($attachmentsUrls)) { $data['attachments'] = $attachmentsUrls; }
         $serviceRequest = ServiceRequest::create($data);
 
         return response()->json($serviceRequest, 201);
@@ -155,41 +117,17 @@ class ServiceRequestController extends Controller
         $mode = $request->input('attachments_mode', 'replace');
         $payload = $request->except(['attachments','attachments_mode']);
         $existing = is_array($serviceRequest->attachments) ? $serviceRequest->attachments : [];
-        $newUrls = [];
         if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                if (!$file->isValid()) { continue; }
-                try {
-                    $folder = 'service_requests';
-                    $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                    $key = $folder . '/' . $filename;
-                    $this->s3Client->putObject([
-                        'Bucket' => config('services.supabase.bucket'),
-                        'Key' => $key,
-                        'Body' => fopen($file->getPathname(), 'r'),
-                        'ContentType' => $file->getMimeType(),
-                    ]);
-                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
-                    Upload::create([
-                        'user_id' => $serviceRequest->user_id,
-                        'stored_name' => $filename,
-                        'folder' => $folder,
-                        'path' => $key,
-                        'url' => $publicUrl,
-                        'size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType()
-                    ]);
-                    $newUrls[] = $publicUrl;
-                } catch (AwsException $e) {
-                    return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
+            try {
+                $results = $this->uploadService->uploadMany($request->file('attachments'), 'service_requests', $serviceRequest->user_id);
+                $newUrls = array_map(fn($r) => $r['url'], $results);
+                if ($mode === 'append') {
+                    $payload['attachments'] = array_values(array_merge($existing, $newUrls));
+                } else {
+                    $payload['attachments'] = $newUrls;
                 }
-            }
-        }
-        if ($request->hasFile('attachments')) {
-            if ($mode === 'append') {
-                $payload['attachments'] = array_values(array_merge($existing, $newUrls));
-            } else {
-                $payload['attachments'] = $newUrls; 
+            } catch (AwsException $e) {
+                return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
             }
         }
         $serviceRequest->update($payload);
