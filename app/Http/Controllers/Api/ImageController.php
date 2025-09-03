@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 use Illuminate\Support\Str;
+use App\Models\Upload;
 
 class ImageController extends Controller
 {
@@ -60,11 +61,27 @@ class ImageController extends Controller
             ]);
 
             $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
+            
+            $userId = auth()->id();
+            if (!$userId && method_exists(auth(), 'guard')) {
+                try { $guardUser = auth()->guard('jwt')->user(); if ($guardUser) { $userId = $guardUser->id; } } catch (\Throwable $t) {}
+            }
+            if (!$userId && $request->user()) { $userId = $request->user()->id; }
+            $upload = Upload::create([
+                'user_id' => $userId,
+                'stored_name' => $filename,
+                'folder' => $folder,
+                'path' => $key,
+                'url' => $publicUrl,
+                'size' => $image->getSize(),
+                'mime_type' => $image->getMimeType()
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Imagem enviada com sucesso',
                 'data' => [
+                    'id' => $upload->id,
                     'filename' => $filename,
                     'path' => $key,
                     'url' => $publicUrl,
