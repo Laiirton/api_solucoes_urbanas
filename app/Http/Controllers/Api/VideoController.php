@@ -5,33 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
-use Illuminate\Support\Str;
-use App\Models\Upload;
+use App\Services\UploadService;
 
 class VideoController extends Controller
 {
-    private $s3Client;
-    public function __construct()
+    private $uploadService;
+    public function __construct(UploadService $uploadService)
     {
-        $httpOptions = [
-            'verify' => env('AWS_SSL_VERIFY', true),
-        ];
-        if (env('APP_ENV') === 'local' && !env('AWS_SSL_VERIFY', true)) {
-            $httpOptions['verify'] = false;
-        }
-        $this->s3Client = new S3Client([
-            'version' => 'latest',
-            'region' => config('services.supabase.region'),
-            'endpoint' => config('services.supabase.endpoint'),
-            'credentials' => [
-                'key' => config('services.supabase.access_key_id'),
-                'secret' => config('services.supabase.secret_access_key'),
-            ],
-            'use_path_style_endpoint' => true,
-            'http' => $httpOptions,
-        ]);
+        $this->uploadService = $uploadService;
     }
 
     public function upload(Request $request): JsonResponse
@@ -43,39 +25,20 @@ class VideoController extends Controller
         try {
             $file = $request->file('video');
             $folder = $request->input('folder', 'videos');
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $key = $folder . '/' . $filename;
-            $this->s3Client->putObject([
-                'Bucket' => config('services.supabase.bucket'),
-                'Key' => $key,
-                'Body' => fopen($file->getPathname(), 'r'),
-                'ContentType' => $file->getMimeType(),
-            ]);
-            $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
             $userId = auth()->id();
-            if (!$userId && method_exists(auth(), 'guard')) {
-                try { $guardUser = auth()->guard('jwt')->user(); if ($guardUser) { $userId = $guardUser->id; } } catch (\Throwable $t) {}
-            }
+            if (!$userId && method_exists(auth(), 'guard')) { try { $g = auth()->guard('jwt')->user(); if ($g) { $userId = $g->id; } } catch (\Throwable $t) {} }
             if (!$userId && $request->user()) { $userId = $request->user()->id; }
-            $upload = Upload::create([
-                'user_id' => $userId,
-                'stored_name' => $filename,
-                'folder' => $folder,
-                'path' => $key,
-                'url' => $publicUrl,
-                'size' => $file->getSize(),
-                'mime_type' => $file->getMimeType()
-            ]);
+            $result = $this->uploadService->upload($file, $folder, $userId);
             return response()->json([
                 'success' => true,
                 'message' => 'Video enviado com sucesso',
                 'data' => [
-                    'id' => $upload->id,
-                    'filename' => $filename,
-                    'path' => $key,
-                    'url' => $publicUrl,
-                    'size' => $file->getSize(),
-                    'mime_type' => $file->getMimeType()
+                    'id' => $result['model']->id,
+                    'filename' => $result['filename'],
+                    'path' => $result['path'],
+                    'url' => $result['url'],
+                    'size' => $result['size'],
+                    'mime_type' => $result['mime_type']
                 ]
             ], 201);
         } catch (AwsException $e) {
@@ -97,10 +60,7 @@ class VideoController extends Controller
             'path' => 'required|string'
         ]);
         try {
-            $this->s3Client->deleteObject([
-                'Bucket' => config('services.supabase.bucket'),
-                'Key' => $request->input('path')
-            ]);
+            $this->uploadService->delete($request->input('path'));
             return response()->json([
                 'success' => true,
                 'message' => 'Video excluido com sucesso'
@@ -117,26 +77,8 @@ class VideoController extends Controller
     {
         $folder = $request->input('folder', 'videos');
         try {
-            $result = $this->s3Client->listObjects([
-                'Bucket' => config('services.supabase.bucket'),
-                'Prefix' => $folder . '/'
-            ]);
-            $items = [];
-            if (isset($result['Contents'])) {
-                foreach ($result['Contents'] as $object) {
-                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $object['Key'];
-                    $items[] = [
-                        'key' => $object['Key'],
-                        'size' => $object['Size'],
-                        'last_modified' => $object['LastModified']->format('Y-m-d H:i:s'),
-                        'url' => $publicUrl
-                    ];
-                }
-            }
-            return response()->json([
-                'success' => true,
-                'data' => $items
-            ]);
+            $items = $this->uploadService->list($folder);
+            return response()->json(['success' => true,'data' => $items]);
         } catch (AwsException $e) {
             return response()->json([
                 'success' => false,
