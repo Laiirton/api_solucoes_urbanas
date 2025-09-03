@@ -4,12 +4,38 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRequest;
+use App\Models\Upload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+use Illuminate\Support\Str;
 
 class ServiceRequestController extends Controller
 {
+    private $s3Client;
+
+    public function __construct()
+    {
+        $httpOptions = [
+            'verify' => env('AWS_SSL_VERIFY', true),
+        ];
+        if (env('APP_ENV') === 'local' && !env('AWS_SSL_VERIFY', true)) {
+            $httpOptions['verify'] = false;
+        }
+        $this->s3Client = new S3Client([
+            'version' => 'latest',
+            'region' => config('services.supabase.region'),
+            'endpoint' => config('services.supabase.endpoint'),
+            'credentials' => [
+                'key' => config('services.supabase.access_key_id'),
+                'secret' => config('services.supabase.secret_access_key'),
+            ],
+            'use_path_style_endpoint' => true,
+            'http' => $httpOptions,
+        ]);
+    }
     public function index(Request $request)
     {
         $query = ServiceRequest::query();
@@ -39,6 +65,8 @@ class ServiceRequestController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'request_data' => ['required', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
+            'attachments' => ['sometimes','array'],
+            'attachments.*' => ['file','max:204800','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska']
         ]);
 
         if ($validator->fails()) {
@@ -48,9 +76,39 @@ class ServiceRequestController extends Controller
             ], 422);
         }
 
-        $data = $request->all();
+        $data = $request->except('attachments');
         $data['user_id'] = $request->user()->id;
-
+        $attachmentsUrls = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file->isValid()) { continue; }
+                try {
+                    $folder = 'service_requests';
+                    $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                    $key = $folder . '/' . $filename;
+                    $this->s3Client->putObject([
+                        'Bucket' => config('services.supabase.bucket'),
+                        'Key' => $key,
+                        'Body' => fopen($file->getPathname(), 'r'),
+                        'ContentType' => $file->getMimeType(),
+                    ]);
+                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
+                    $upload = Upload::create([
+                        'user_id' => $data['user_id'],
+                        'stored_name' => $filename,
+                        'folder' => $folder,
+                        'path' => $key,
+                        'url' => $publicUrl,
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType()
+                    ]);
+                    $attachmentsUrls[] = $publicUrl;
+                } catch (AwsException $e) {
+                    return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
+                }
+            }
+        }
+        if (!empty($attachmentsUrls)) { $data['attachments'] = $attachmentsUrls; }
         $serviceRequest = ServiceRequest::create($data);
 
         return response()->json($serviceRequest, 201);
@@ -82,6 +140,9 @@ class ServiceRequestController extends Controller
             'category' => ['sometimes', 'string', 'max:100'],
             'request_data' => ['sometimes', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
+            'attachments' => ['sometimes','array'],
+            'attachments.*' => ['file','max:204800','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska'],
+            'attachments_mode' => ['sometimes','in:replace,append']
         ]);
 
         if ($validator->fails()) {
@@ -91,7 +152,47 @@ class ServiceRequestController extends Controller
             ], 422);
         }
 
-        $serviceRequest->update($request->all());
+        $mode = $request->input('attachments_mode', 'replace');
+        $payload = $request->except(['attachments','attachments_mode']);
+        $existing = is_array($serviceRequest->attachments) ? $serviceRequest->attachments : [];
+        $newUrls = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if (!$file->isValid()) { continue; }
+                try {
+                    $folder = 'service_requests';
+                    $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                    $key = $folder . '/' . $filename;
+                    $this->s3Client->putObject([
+                        'Bucket' => config('services.supabase.bucket'),
+                        'Key' => $key,
+                        'Body' => fopen($file->getPathname(), 'r'),
+                        'ContentType' => $file->getMimeType(),
+                    ]);
+                    $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $key;
+                    Upload::create([
+                        'user_id' => $serviceRequest->user_id,
+                        'stored_name' => $filename,
+                        'folder' => $folder,
+                        'path' => $key,
+                        'url' => $publicUrl,
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType()
+                    ]);
+                    $newUrls[] = $publicUrl;
+                } catch (AwsException $e) {
+                    return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
+                }
+            }
+        }
+        if ($request->hasFile('attachments')) {
+            if ($mode === 'append') {
+                $payload['attachments'] = array_values(array_merge($existing, $newUrls));
+            } else {
+                $payload['attachments'] = $newUrls; 
+            }
+        }
+        $serviceRequest->update($payload);
 
         return response()->json($serviceRequest);
     }
