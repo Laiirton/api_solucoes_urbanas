@@ -51,7 +51,7 @@ class ServiceRequestController extends Controller
             'request_data' => ['required', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
             'attachments' => ['sometimes','array'],
-            'attachments.*' => ['file','max:204800','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska']
+            'attachments.*' => ['file','max:51200','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska']
         ]);
 
         if ($validator->fails()) {
@@ -103,7 +103,7 @@ class ServiceRequestController extends Controller
             'request_data' => ['sometimes', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
             'attachments' => ['sometimes','array'],
-            'attachments.*' => ['file','max:204800','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska'],
+            'attachments.*' => ['file','max:51200','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska'],
             'attachments_mode' => ['sometimes','in:replace,append']
         ]);
 
