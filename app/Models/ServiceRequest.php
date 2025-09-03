@@ -18,10 +18,12 @@ class ServiceRequest extends Model
         'category',
         'request_data',
         'status',
+        'attachments'
     ];
 
     protected $casts = [
         'request_data' => 'json',
+        'attachments' => 'json',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
