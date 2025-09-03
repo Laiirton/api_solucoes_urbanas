@@ -19,7 +19,7 @@ class VideoController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'video' => 'required|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-matroska|max:204800',
+            'video' => 'required|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo,video/x-matroska|max:51200',
             'folder' => 'string|max:255'
         ]);
         try {
