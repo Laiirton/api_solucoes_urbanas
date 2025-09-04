@@ -50,8 +50,7 @@ class ServiceRequestController extends Controller
             'category' => ['required', 'string', 'max:100'],
             'request_data' => ['required', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
-            'attachments' => ['sometimes','array'],
-            'attachments.*' => ['file','max:51200','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska']
+            'attachments' => ['sometimes','array']
         ]);
 
         if ($validator->fails()) {
@@ -63,7 +62,26 @@ class ServiceRequestController extends Controller
 
         $data = $request->except('attachments');
         $data['user_id'] = $request->user()->id;
-        if ($request->hasFile('attachments')) {
+        
+        if ($request->has('attachments') && is_array($request->input('attachments'))) {
+            try {
+                $attachments = $request->input('attachments');
+                $allUrls = [];
+                
+                foreach ($attachments as $attachment) {
+                    if (is_string($attachment) && (strpos($attachment, 'data:') === 0 || strpos($attachment, '/9j/') === 0)) {
+                        $result = $this->uploadService->uploadFromBase64($attachment, 'service_requests', $data['user_id']);
+                        $allUrls[] = $result['url'];
+                    }
+                }
+                
+                if (!empty($allUrls)) {
+                    $data['attachments'] = $allUrls;
+                }
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Erro ao processar anexos: '.$e->getMessage()], 500);
+            }
+        } elseif ($request->hasFile('attachments')) {
             try {
                 $results = $this->uploadService->uploadMany($request->file('attachments'), 'service_requests', $data['user_id']);
                 $data['attachments'] = array_map(fn($r) => $r['url'], $results);
@@ -103,7 +121,6 @@ class ServiceRequestController extends Controller
             'request_data' => ['sometimes', 'array'],
             'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
             'attachments' => ['sometimes','array'],
-            'attachments.*' => ['file','max:51200','mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska'],
             'attachments_mode' => ['sometimes','in:replace,append']
         ]);
 
@@ -117,17 +134,35 @@ class ServiceRequestController extends Controller
         $mode = $request->input('attachments_mode', 'replace');
         $payload = $request->except(['attachments','attachments_mode']);
         $existing = is_array($serviceRequest->attachments) ? $serviceRequest->attachments : [];
-        if ($request->hasFile('attachments')) {
+        $newUrls = [];
+        
+        if ($request->has('attachments') && is_array($request->input('attachments'))) {
+            try {
+                $attachments = $request->input('attachments');
+                
+                foreach ($attachments as $attachment) {
+                    if (is_string($attachment) && (strpos($attachment, 'data:') === 0 || strpos($attachment, '/9j/') === 0)) {
+                        $result = $this->uploadService->uploadFromBase64($attachment, 'service_requests', $serviceRequest->user_id);
+                        $newUrls[] = $result['url'];
+                    }
+                }
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Erro ao processar anexos: '.$e->getMessage()], 500);
+            }
+        } elseif ($request->hasFile('attachments')) {
             try {
                 $results = $this->uploadService->uploadMany($request->file('attachments'), 'service_requests', $serviceRequest->user_id);
-                $newUrls = array_map(fn($r) => $r['url'], $results);
-                if ($mode === 'append') {
-                    $payload['attachments'] = array_values(array_merge($existing, $newUrls));
-                } else {
-                    $payload['attachments'] = $newUrls;
-                }
+                $newUrls = array_merge($newUrls, array_map(fn($r) => $r['url'], $results));
             } catch (AwsException $e) {
                 return response()->json(['message' => 'Erro ao enviar arquivo: '.$e->getMessage()], 500);
+            }
+        }
+        
+        if (!empty($newUrls)) {
+            if ($mode === 'append') {
+                $payload['attachments'] = array_values(array_merge($existing, $newUrls));
+            } else {
+                $payload['attachments'] = $newUrls;
             }
         }
         $serviceRequest->update($payload);
