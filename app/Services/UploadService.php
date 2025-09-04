@@ -67,6 +67,103 @@ class UploadService
         }
         return $results;
     }
+
+    public function uploadFromBase64(string $base64Data, string $folder, ?int $userId, string $extension = 'jpg'): array
+    {
+        if (strpos($base64Data, 'data:') === 0) {
+            preg_match('/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,(.*)/', $base64Data, $matches);
+            if (count($matches) >= 3) {
+                $mimeType = $matches[1];
+                $base64Data = $matches[2];
+                $extension = $this->getExtensionFromMimeType($mimeType);
+            }
+        }
+
+        $decodedData = base64_decode($base64Data);
+        if ($decodedData === false) {
+            throw new \InvalidArgumentException('Invalid base64 data');
+        }
+
+        $filename = Str::uuid().'.'.$extension;
+        $key = $folder.'/'.$filename;
+
+        $this->s3Client->putObject([
+            'Bucket' => config('services.supabase.bucket'),
+            'Key' => $key,
+            'Body' => $decodedData,
+            'ContentType' => $this->getMimeTypeFromExtension($extension),
+        ]);
+
+        $publicUrl = 'https://fhvalhsxiyqlauxqfibe.supabase.co/storage/v1/object/public/'.config('services.supabase.bucket').'/'.$key;
+
+        $upload = Upload::create([
+            'user_id' => $userId,
+            'stored_name' => $filename,
+            'folder' => $folder,
+            'path' => $key,
+            'url' => $publicUrl,
+            'size' => strlen($decodedData),
+            'mime_type' => $this->getMimeTypeFromExtension($extension)
+        ]);
+
+        return [
+            'model' => $upload,
+            'url' => $publicUrl,
+            'path' => $key,
+            'filename' => $filename,
+            'size' => strlen($decodedData),
+            'mime_type' => $this->getMimeTypeFromExtension($extension)
+        ];
+    }
+
+    public function uploadManyFromBase64(array $base64Images, string $folder, ?int $userId): array
+    {
+        $results = [];
+        foreach ($base64Images as $base64Image) {
+            if (is_string($base64Image) && !empty($base64Image)) {
+                try {
+                    $results[] = $this->uploadFromBase64($base64Image, $folder, $userId);
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+        }
+        return $results;
+    }
+
+    private function getExtensionFromMimeType(string $mimeType): string
+    {
+        $extensions = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/svg+xml' => 'svg',
+            'video/mp4' => 'mp4',
+            'video/quicktime' => 'mov',
+            'video/x-msvideo' => 'avi',
+            'video/x-matroska' => 'mkv'
+        ];
+
+        return $extensions[$mimeType] ?? 'jpg';
+    }
+
+    private function getMimeTypeFromExtension(string $extension): string
+    {
+        $mimeTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
+            'mp4' => 'video/mp4',
+            'mov' => 'video/quicktime',
+            'avi' => 'video/x-msvideo',
+            'mkv' => 'video/x-matroska'
+        ];
+
+        return $mimeTypes[$extension] ?? 'image/jpeg';
+    }
     public function delete(string $path): void
     {
         $this->s3Client->deleteObject([
