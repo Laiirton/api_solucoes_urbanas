@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('user_id')->nullable();
             $table->integer('service_id');
-             $table->text('protocol_number')->nullable();
+            $table->text('protocol_number')->nullable();
             $table->text('service_title');
             $table->text('category');
             $table->jsonb('request_data');
