@@ -12,9 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('service_requests', function (Blueprint $table) {
-            $table->id(); 
+            $table->id();
             $table->integer('user_id')->nullable();
             $table->integer('service_id');
+             $table->text('protocol_number')->nullable();
             $table->text('service_title');
             $table->text('category');
             $table->jsonb('request_data');
@@ -22,7 +23,6 @@ return new class extends Migration
             $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
             $table->timestampTz('created_at')->useCurrent();
             $table->timestampTz('updated_at')->useCurrent()->useCurrentOnUpdate();
-            
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
     }
