@@ -24,6 +24,12 @@ class ServiceRequestController extends Controller
     public function index(Request $request)
     {
         $query = ServiceRequest::query();
+        $user = $request->user();
+
+        // Se for usuário normal (não admin), mostra apenas seus próprios serviços
+        if ($user->type !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -33,7 +39,8 @@ class ServiceRequestController extends Controller
             $query->where('category', $request->category);
         }
 
-        if ($request->has('user_id')) {
+        // Se for admin e especificar user_id, filtra por esse usuário
+        if ($request->has('user_id') && $user->type === 'admin') {
             $query->where('user_id', $request->user_id);
         }
 
