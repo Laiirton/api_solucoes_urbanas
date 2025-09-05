@@ -62,6 +62,7 @@ class ServiceRequestController extends Controller
 
         $data = $request->except('attachments');
         $data['user_id'] = $request->user()->id;
+        $data['protocol_number'] = ServiceRequest::generateProtocolNumber();
         
         if ($request->has('attachments') && is_array($request->input('attachments'))) {
             try {
