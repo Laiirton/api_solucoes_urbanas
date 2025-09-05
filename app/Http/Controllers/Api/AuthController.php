@@ -82,17 +82,17 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        
-        $stats = [
+
+        $userData = $user->toArray();
+        $userData['stats'] = [
             'requests_made' => $user->serviceRequests()->count(),
             'completed' => $user->serviceRequests()->completed()->count(),
             'in_progress' => $user->serviceRequests()->inProgress()->count(),
             'cancelled' => $user->serviceRequests()->cancelled()->count(),
         ];
-        
+
         return response()->json([
-            'user' => $user,
-            'stats' => $stats
+            'user' => $userData
         ]);
     }
 
