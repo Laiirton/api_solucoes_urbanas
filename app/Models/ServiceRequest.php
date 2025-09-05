@@ -33,6 +33,26 @@ class ServiceRequest extends Model
         'status' => 'pending',
     ];
 
+    // Define a ordem dos campos no JSON
+    protected $appends = [];
+    
+    public function toArray()
+    {
+        return [
+            'id' => $this->id,
+            'user_id' => $this->user_id,
+            'service_id' => $this->service_id,
+            'protocol_number' => $this->protocol_number,
+            'service_title' => $this->service_title,
+            'category' => $this->category,
+            'request_data' => $this->request_data,
+            'attachments' => $this->attachments,
+            'status' => $this->status,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
