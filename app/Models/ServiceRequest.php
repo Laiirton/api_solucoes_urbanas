@@ -82,12 +82,12 @@ class ServiceRequest extends Model
     {
         do {
             $letters = '';
-            for ($i = 0; $i < 3; $i++) {
+            for ($i = 0; $i < 4; $i++) {
                 $letters .= chr(rand(65, 90));
             }
             
             $numbers = '';
-            for ($i = 0; $i < 5; $i++) {
+            for ($i = 0; $i < 8; $i++) {
                 $numbers .= rand(0, 9);
             }
             
