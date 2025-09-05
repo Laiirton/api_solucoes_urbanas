@@ -14,6 +14,7 @@ class ServiceRequest extends Model
     protected $fillable = [
         'user_id',
         'service_id',
+        'protocol_number',
         'service_title',
         'category',
         'request_data',
@@ -75,5 +76,24 @@ class ServiceRequest extends Model
     public function isCancelled()
     {
         return $this->status === 'cancelled';
+    }
+
+    public static function generateProtocolNumber()
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 3; $i++) {
+                $letters .= chr(rand(65, 90));
+            }
+            
+            $numbers = '';
+            for ($i = 0; $i < 5; $i++) {
+                $numbers .= rand(0, 9);
+            }
+            
+            $protocol = $letters . $numbers;
+        } while (self::where('protocol_number', $protocol)->exists());
+        
+        return $protocol;
     }
 }
