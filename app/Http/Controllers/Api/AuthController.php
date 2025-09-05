@@ -82,7 +82,18 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        return response()->json(['user' => $user]);
+        
+        $stats = [
+            'requests_made' => $user->serviceRequests()->count(),
+            'completed' => $user->serviceRequests()->completed()->count(),
+            'in_progress' => $user->serviceRequests()->inProgress()->count(),
+            'cancelled' => $user->serviceRequests()->cancelled()->count(),
+        ];
+        
+        return response()->json([
+            'user' => $user,
+            'stats' => $stats
+        ]);
     }
 
     private function issueToken(User $user): string
