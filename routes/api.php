@@ -7,9 +7,6 @@ use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\ImageController;
 use App\Http\Controllers\Api\VideoController;
 
-// Rotas de health check
-require __DIR__.'/health.php';
-
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);

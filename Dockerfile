@@ -47,6 +47,9 @@ COPY Caddyfile /etc/caddy/Caddyfile
 # Instalar dependências Node.js e build assets
 RUN npm ci && npm run build
 
+# Definir variável de ambiente para permitir execução do Composer como root
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # Executar scripts do composer após copiar todos os arquivos
 RUN composer run post-autoload-dump
 
