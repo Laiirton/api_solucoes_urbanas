@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-php artisan migrate --force || true
+php artisan migrate:fresh --force || true
 php artisan config:clear || true
 php artisan cache:clear || true
 php artisan route:clear || true
