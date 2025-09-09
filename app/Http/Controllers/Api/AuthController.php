@@ -62,14 +62,19 @@ class AuthController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        // Determina se vai buscar pelo email ou pelo username
         if (!empty($data['email'])) {
             $user = User::where('email', $data['email'])->first();
+            if (!$user) {
+                return response()->json(['message' => 'Email not found'], 404);
+            }
         } else {
             $user = User::where('username', $data['username'])->first();
+            if (!$user) {
+                return response()->json(['message' => 'Username not found'], 404);
+            }
         }
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        if (!Hash::check($data['password'], $user->password)) {
+            return response()->json(['message' => 'Incorrect password'], 401);
         }
 
         $token = $this->issueToken($user);
