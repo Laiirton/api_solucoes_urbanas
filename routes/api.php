@@ -17,8 +17,6 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::middleware('auth.jwt')->group(function () {
-    Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
-    
     Route::apiResource('service-requests', ServiceRequestController::class);
     
     Route::prefix('images')->group(function () {
@@ -33,4 +31,6 @@ Route::middleware('auth.jwt')->group(function () {
         Route::get('/list', [VideoController::class, 'list']);
     });
 });
+
+Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
 
