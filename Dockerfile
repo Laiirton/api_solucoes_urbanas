@@ -41,6 +41,9 @@ COPY . .
 COPY health-check.sh /usr/local/bin/health-check.sh
 RUN chmod +x /usr/local/bin/health-check.sh
 
+# Copiar arquivo de configuração do Caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+
 # Instalar dependências Node.js e build assets
 RUN npm ci && npm run build
 
@@ -59,15 +62,6 @@ RUN chown -R www-data:www-data /var/www \
 
 # Criar diretório público para os assets
 RUN mkdir -p public
-
-# Criar arquivo de configuração do Caddy
-RUN echo ":8000 {
-    root * /var/www/public
-    php_fastcgi 127.0.0.1:9000
-    file_server
-    encode gzip
-    log
-}" > /etc/caddy/Caddyfile
 
 # Expor porta
 EXPOSE 8000
