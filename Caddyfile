@@ -1,23 +1,17 @@
 :8000 {
     root * /var/www/public
-    php_fastcgi 127.0.0.1:9000 {
-        index index.php
-    }
-    file_server
     encode gzip
     log
-    
-    # Rotas da API
-    route /api* {
-        php_fastcgi 127.0.0.1:9000 {
-            index index.php
-        }
+    php_fastcgi 127.0.0.1:9000
+    file_server
+    @rewrite {
+        not file
+        path_regexp api .*
     }
-    
-    # Rota de health check
-    route /health {
-        php_fastcgi 127.0.0.1:9000 {
-            index index.php
+    rewrite @rewrite /index.php
+    handle_path /health {
+        respond 200 {
+            body "OK"
         }
     }
 }

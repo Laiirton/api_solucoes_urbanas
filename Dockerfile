@@ -53,10 +53,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Executar scripts do composer após copiar todos os arquivos
 RUN composer run post-autoload-dump
 
-# Gerar caches do Laravel
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+RUN php artisan key:generate --force || true
 
 # Configurar permissões
 RUN chown -R www-data:www-data /var/www \
@@ -66,8 +63,7 @@ RUN chown -R www-data:www-data /var/www \
 # Criar diretório público para os assets
 RUN mkdir -p public
 
-# Expor porta
 EXPOSE 8000
-
-# Comando de inicialização
-CMD php-fpm & caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+CMD ["/usr/local/bin/entrypoint.sh"]
