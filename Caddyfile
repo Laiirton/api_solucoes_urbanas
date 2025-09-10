@@ -9,6 +9,11 @@
         path_regexp api .*
     }
     rewrite @rewrite /index.php
+    handle_path /healthz {
+        respond 200 {
+            body "OK"
+        }
+    }
     handle_path /health {
         respond 200 {
             body "OK"

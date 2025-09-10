@@ -1,0 +1,44 @@
+name: Deploy Status Check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-status:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Wait for Render deploy
+        run: |
+          echo "⏳ Aguardando deploy no Render..."
+          sleep 120  # Aguarda 2 minutos para o deploy completar
+          
+      - name: Check API Health
+        run: |
+          echo "🔍 Verificando health check..."
+          
+          # Tenta até 10 vezes com intervalo de 30s
+          for i in {1..10}; do
+            echo "Tentativa $i/10..."
+            
+            # URL do seu serviço no Render
+            if curl -f -s "https://api-solucoes-urbanas.onrender.com/health"; then
+              echo "✅ Health check OK!"
+              echo "🎉 Deploy realizado com sucesso!"
+              echo "✅ API está funcionando corretamente"
+              exit 0
+            else
+              echo "❌ Health check falhou, tentando novamente em 30s..."
+              if [ $i -eq 10 ]; then
+                echo "💥 Deploy falhou ou API não está respondendo"
+                echo "❌ Verifique os logs no Render Dashboard"
+                exit 1
+              fi
+              sleep 30
+            fi
+          done
