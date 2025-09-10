@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Firebase\JWT\JWT;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -40,7 +39,7 @@ class AuthController extends Controller
             'type'       => $data['type'] ?? null,
         ]);
 
-        $token = $this->issueToken($user);
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user'  => $user,
@@ -77,7 +76,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Incorrect password'], 401);
         }
 
-        $token = $this->issueToken($user);
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'token' => $token,
@@ -101,21 +100,5 @@ class AuthController extends Controller
         ]);
     }
 
-    private function issueToken(User $user): string
-    {
-        $secret = config('app.supabase_jwt_secret', env('SUPABASE_JWT_SECRET'));
-        $ttl = (int) env('JWT_TTL', 60 * 60 * 24 * 7); // 7 days
-        $now = time();
 
-        $payload = [
-            'iss' => 'supabase',
-            'iat' => $now,
-            'nbf' => $now,
-            'exp' => $now + $ttl,
-            'sub' => (string) $user->id,
-            'role' => 'anon',
-        ];
-
-        return JWT::encode($payload, $secret, 'HS256');
-    }
 }

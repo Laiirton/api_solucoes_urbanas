@@ -11,8 +11,8 @@
     "require": {
         "php": "^8.2",
         "aws/aws-sdk-php": "^3.356",
-        "firebase/php-jwt": "^6.10",
         "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.2",
         "laravel/tinker": "^2.10.1",
         "livewire/flux": "^2.1.1",
         "livewire/volt": "^1.7.0"
