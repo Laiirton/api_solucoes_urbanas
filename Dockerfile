@@ -1,7 +1,12 @@
 FROM php:8.2-fpm
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
+# Definir variáveis de ambiente para otimização
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV NODE_ENV=production
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar dependências do sistema em uma única camada otimizada
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     libpng-dev \
@@ -10,17 +15,21 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libpq-dev \
-    nodejs \
-    npm \
     ca-certificates \
     gnupg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg \
     && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list \
     && apt-get update \
-    && apt-get install -y caddy
+    && apt-get install -y --no-install-recommends caddy \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Instalar extensões PHP
-RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+# Instalar Node.js 20 LTS (mais rápido que o padrão do apt)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar extensões PHP em paralelo quando possível
+RUN docker-php-ext-install -j$(nproc) pdo pdo_pgsql mbstring exif pcntl bcmath gd
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -28,42 +37,39 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Definir diretório de trabalho
 WORKDIR /var/www
 
-# Copiar composer files para cache das dependências
+# Copiar apenas package.json e package-lock.json primeiro para cache NPM
+COPY package*.json ./
+
+# Instalar dependências Node.js primeiro (cache separado)
+RUN npm ci --only=production --no-audit --no-fund
+
+# Copiar composer files para cache das dependências PHP
 COPY composer.json composer.lock ./
 
-# Instalar dependências PHP (etapa separada para melhorar cache)
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# Instalar dependências PHP com otimizações
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-# Copiar arquivos do projeto
+# Copiar arquivos de configuração primeiro
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY health-check.sh /usr/local/bin/health-check.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Tornar scripts executáveis
+RUN chmod +x /usr/local/bin/health-check.sh /usr/local/bin/entrypoint.sh
+
+# Copiar código fonte (isso invalidará cache apenas quando código mudar)
 COPY . .
 
-# Copiar script de health check
-COPY health-check.sh /usr/local/bin/health-check.sh
-RUN chmod +x /usr/local/bin/health-check.sh
-
-# Copiar arquivo de configuração do Caddy
-COPY Caddyfile /etc/caddy/Caddyfile
-
-# Instalar dependências Node.js e build assets
-RUN npm ci && npm run build
-
-# Definir variável de ambiente para permitir execução do Composer como root
-ENV COMPOSER_ALLOW_SUPERUSER=1
+# Build dos assets (depois de copiar todo o código)
+RUN npm run build && npm cache clean --force
 
 # Executar scripts do composer após copiar todos os arquivos
 RUN composer run post-autoload-dump
 
-RUN php artisan key:generate --force || true
-
-# Configurar permissões
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage \
-    && chmod -R 755 /var/www/bootstrap/cache
-
-# Criar diretório público para os assets
-RUN mkdir -p public
+# Configurar permissões e criar diretórios necessários
+RUN mkdir -p public storage/logs bootstrap/cache \
+    && chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 8000
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 CMD ["/usr/local/bin/entrypoint.sh"]

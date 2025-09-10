@@ -34,6 +34,10 @@ class ServiceRequestController extends Controller
             $statusParam = $request->query('status');
 
             if (is_array($statusParam)) {
+
+        if ($request->has('category')) {
+            $query->where('category', $request->query('category'));
+        }
                 $statuses = array_values(array_filter(array_map('strval', $statusParam)));
                 if (!empty($statuses)) {
                     $query->whereIn('status', $statuses);
