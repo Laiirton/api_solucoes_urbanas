@@ -19,17 +19,6 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('service-requests', ServiceRequestController::class);
     
-    Route::prefix('images')->group(function () {
-        Route::post('/upload', [ImageController::class, 'upload']);
-        Route::delete('/delete', [ImageController::class, 'delete']);
-        Route::get('/list', [ImageController::class, 'list']);
-    });
-
-    Route::prefix('videos')->group(function () {
-        Route::post('/upload', [VideoController::class, 'upload']);
-        Route::delete('/delete', [VideoController::class, 'delete']);
-        Route::get('/list', [VideoController::class, 'list']);
-    });
 });
 
 Route::apiResource('users', UserController::class)->parameters(['users' => 'id']);
