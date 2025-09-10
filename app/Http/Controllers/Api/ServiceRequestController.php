@@ -26,25 +26,34 @@ class ServiceRequestController extends Controller
         $query = ServiceRequest::query();
         $user = $request->user();
 
-        // Se for usuário normal (não admin), mostra apenas seus próprios serviços
         if ($user->type !== 'admin') {
             $query->where('user_id', $user->id);
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $statusParam = $request->query('status');
+
+            if (is_array($statusParam)) {
+                $statuses = array_values(array_filter(array_map('strval', $statusParam)));
+                if (!empty($statuses)) {
+                    $query->whereIn('status', $statuses);
+                }
+            } else {
+                $statusStr = trim((string) $statusParam);
+                if ($statusStr !== '') {
+                    if (strpos($statusStr, ',') !== false) {
+                        $statuses = array_values(array_filter(array_map('trim', explode(',', $statusStr))));
+                        if (!empty($statuses)) {
+                            $query->whereIn('status', $statuses);
+                        }
+                    } else {
+                        $query->where('status', $statusStr);
+                    }
+                }
+            }
         }
 
-        if ($request->has('category')) {
-            $query->where('category', $request->category);
-        }
-
-        // Se for admin e especificar user_id, filtra por esse usuário
-        if ($request->has('user_id') && $user->type === 'admin') {
-            $query->where('user_id', $request->user_id);
-        }
-
-        $serviceRequests = $query->orderBy('created_at', 'desc')->get();
+    $serviceRequests = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return response()->json($serviceRequests);
     }
