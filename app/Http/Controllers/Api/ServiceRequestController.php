@@ -35,7 +35,15 @@ class ServiceRequestController extends Controller
         $serviceRequests = $query->orderBy('created_at', 'desc')
                                 ->paginate(self::DEFAULT_PER_PAGE);
 
-        return response()->json($serviceRequests);
+        return response()->json([
+            'data' => $serviceRequests->items(),
+            'pagination' => [
+                'current_page' => $serviceRequests->currentPage(),
+                'last_page' => $serviceRequests->lastPage(),
+                'per_page' => $serviceRequests->perPage(),
+                'total' => $serviceRequests->total(),
+            ]
+        ]);
     }
 
     public function store(Request $request): JsonResponse
