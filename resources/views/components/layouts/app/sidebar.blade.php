@@ -12,8 +12,11 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                <flux:navlist.group :heading="__('Backoffice')" class="grid">
+                    <flux:navlist.item icon="home" :href="route('backoffice.dashboard')" :current="request()->routeIs('backoffice.dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="clipboard-document-list" :href="route('backoffice.service-requests.index')" :current="request()->routeIs('backoffice.service-requests.*')" wire:navigate>{{ __('Solicitações') }}</flux:navlist.item>
+                    <flux:navlist.item icon="cloud-arrow-up" :href="route('backoffice.uploads.index')" :current="request()->routeIs('backoffice.uploads.*')" wire:navigate>{{ __('Uploads') }}</flux:navlist.item>
+                    <flux:navlist.item icon="users" :href="route('backoffice.users.index')" :current="request()->routeIs('backoffice.users.*')" wire:navigate>{{ __('Usuários') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 
@@ -32,7 +35,7 @@
             <!-- Desktop User Menu -->
             <flux:dropdown class="hidden lg:block" position="bottom" align="start">
                 <flux:profile
-                    :name="auth()->user()->name"
+                    :name="auth()->user()->full_name"
                     :initials="auth()->user()->initials()"
                     icon:trailing="chevrons-up-down"
                 />
@@ -50,7 +53,7 @@
                                 </span>
 
                                 <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
+                                    <span class="truncate font-semibold">{{ auth()->user()->full_name }}</span>
                                     <span class="truncate text-xs">{{ auth()->user()->email }}</span>
                                 </div>
                             </div>
@@ -100,7 +103,7 @@
                                 </span>
 
                                 <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
+                                    <span class="truncate font-semibold">{{ auth()->user()->full_name }}</span>
                                     <span class="truncate text-xs">{{ auth()->user()->email }}</span>
                                 </div>
                             </div>
