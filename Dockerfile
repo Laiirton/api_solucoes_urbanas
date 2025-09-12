@@ -40,8 +40,8 @@ WORKDIR /var/www
 # Copiar apenas package.json e package-lock.json primeiro para cache NPM
 COPY package*.json ./
 
-# Instalar dependências Node.js primeiro (cache separado)
-RUN npm ci --only=production --no-audit --no-fund
+# Instalar dependências Node.js primeiro (incluindo dev para build)
+RUN npm ci --no-audit --no-fund
 
 # Copiar composer files para cache das dependências PHP
 COPY composer.json composer.lock ./
@@ -60,11 +60,16 @@ RUN chmod +x /usr/local/bin/health-check.sh /usr/local/bin/entrypoint.sh
 # Copiar código fonte (isso invalidará cache apenas quando código mudar)
 COPY . .
 
-# Build dos assets (depois de copiar todo o código)
-RUN npm run build && npm cache clean --force
+# Build dos assets com otimizações para produção
+RUN NODE_ENV=production npm run build && npm cache clean --force
 
 # Executar scripts do composer após copiar todos os arquivos
 RUN composer run post-autoload-dump
+
+# Otimizar para produção
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
+RUN php artisan view:cache || true
 
 # Configurar permissões e criar diretórios necessários
 RUN mkdir -p public storage/logs bootstrap/cache \
