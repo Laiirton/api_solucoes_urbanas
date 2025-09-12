@@ -12,9 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/health',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->alias([
-            'backoffice' => \App\Http\Middleware\BackofficeMiddleware::class,
-        ]);
+        //
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

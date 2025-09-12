@@ -67,10 +67,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(ServiceRequest::class);
     }
-
-    public function uploads()
-    {
-        return $this->hasMany(Upload::class);
-    }
 }
 
