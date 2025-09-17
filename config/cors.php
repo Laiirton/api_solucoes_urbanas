@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:8081', 'http://localhost:3000'],
+    'allowed_origins' => ['http://localhost:8081', 'http://localhost:3000', 'https://solucoesurb.vercel.app'],
 
     'allowed_origins_patterns' => [],
 
