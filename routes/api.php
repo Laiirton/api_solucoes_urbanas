@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ServiceRequestController;
 use App\Http\Controllers\Api\GeolocationController;
+use App\Http\Controllers\Api\HomeController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -20,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('service-requests', ServiceRequestController::class);
 
     Route::get('geolocation', GeolocationController::class);
+
+    Route::get('home', [HomeController::class, 'index']);
 
     
 });
